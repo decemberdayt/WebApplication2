@@ -1,0 +1,427 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyDRy0zMHt_FlvgrBiQfzob2HCiLSJfIxmY&callback=callback"
+            async defer></script>
+    <style type="text/css">
+        /* Without it font in infowindows was white */
+        .AnyUnusedClassName {
+            color: #000000;
+        }
+
+        /*map size*/
+        #map {
+            height: 550px;
+            width: 100%;
+        }
+
+        /*searchBox*/
+        .pac-card {
+            margin: 10px 10px 0 0;
+            border-radius: 2px 0 0 2px;
+            box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            outline: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            background-color: #fff;
+            font-family: Roboto;
+        }
+
+        #pac-container {
+            padding-bottom: 12px;
+            margin-right: 7px;
+        }
+
+        .pac-controls {
+            display: inline-block;
+            padding: 5px 11px;
+        }
+
+            .pac-controls label {
+                font-family: Roboto;
+                font-size: 12px;
+                font-weight: 300;
+            }
+
+        #pac-input {
+            background-color: #fff;
+            font-family: Roboto;
+            font-size: 12px;
+            font-weight: 300;
+            margin-left: 7px;
+            padding: 0 11px 0 13px;
+            text-overflow: ellipsis;
+            display: inline-block;
+            width: 400px;
+            height: 23px;
+        }
+
+            #pac-input:focus {
+                border-color: #4d90fe;
+            }
+
+        /*buttons*/
+        #controlButtonUI,
+        #deleteAllUI,
+        #deleteLastUI {
+            background-color: #fff;
+            border: 2px solid #fff;
+            border-radius: 3px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            float: left;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #deleteLastUI {
+            margin-left: 12px;
+        }
+
+        #controlButtonText,
+        #deleteAllText,
+        #deleteLastText {
+            color: #191919;
+            font-family: Roboto, Arial, sans-serif;
+            font-size: 12px;
+            line-height: 16px;
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+    </style>
+    <script>
+        //
+        //google api callback/main
+        function callback() {
+            //map
+            const map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 52.229676, lng: 21.012229 },
+                zoom: 11,
+                mapTypeId: "roadmap",
+                disableDefaultUI: true,
+                //no ctrl+scroll zoom but only scroll
+                gestureHandling: 'greedy'
+            });
+            //array with map markers
+            var markers = [];
+
+            //for drawing routes
+            const directionsService = new google.maps.DirectionsService();
+            const directionsRenderer = new google.maps.DirectionsRenderer({
+                draggable: true,
+                map,
+                suppressMarkers: true
+            });
+
+            //searchbox with routes drawing
+            SearchBox(map, markers, directionsService, directionsRenderer);
+            //deleting markers with routes
+            ResetButton(map, markers, directionsService, directionsRenderer);
+            SetPhoto(map, markers);
+            //var distance = 0;
+            //distance = computeTotalDistance(directionsRenderer.getDirections());
+            let tmp;
+            directionsRenderer.addListener("directions_changed", () => {
+                //distance = computeTotalDistance(directionsRenderer.getDirections());
+                tmp = DistanceBox(map, markers, directionsService, directionsRenderer, tmp);
+            });
+            SaveRoute(map, markers);
+
+        }
+
+        function SearchBox(map, markers, directionsService, directionsRenderer) {
+
+            // Create the search box and link it to the UI element.
+            const input = document.getElementById("pac-input");
+            const searchBox = new google.maps.places.SearchBox(input);
+            map.controls[google.maps.ControlPosition.TOP_CENTER].push(input);
+
+            // Bias the SearchBox results towards current map's viewport.
+            map.addListener("bounds_changed", () => {
+                searchBox.setBounds(map.getBounds());
+            });
+
+            // Listen for the event fired when the user selects a prediction and retrieve
+            // more details for that place.
+            searchBox.addListener("places_changed", () => {
+                const places = searchBox.getPlaces();
+                //reset searchbox
+                document.getElementById("pac-input").value = "";
+
+                if (places.length == 0) {
+                    return;
+                }
+
+                // For each place, get the icon, name and location.
+                const bounds = new google.maps.LatLngBounds();
+
+                places.forEach((place) => {
+                    if (!place.geometry) {
+                        console.log("Returned place contains no geometry");
+                        return;
+                    }
+
+                    // Create a marker for each place.
+                    var marker = new google.maps.Marker({
+                        map,
+                        title: place.name,
+                        position: place.geometry.location,
+                        label: "" + (markers.length + 1),
+                        //draggable: true,
+                    });
+                    markers.push(marker);
+
+                    if (markers.length > 1) {
+                        DrawRoutes(map, markers, directionsService, directionsRenderer);
+                    }
+
+                    // markers address
+                    if (!window.infowindow) {
+                        window.infowindow = new google.maps.InfoWindow();
+                    }
+
+                    google.maps.event.addListener(marker, "click", () => {
+                        infowindow.close();
+                        //setting info window
+                        infowindow.setContent(String(marker.getTitle())),
+                        infowindow.open(map, marker);
+                    });
+
+                });
+
+            });
+
+        }
+
+        function DrawRoutes(map, markers, service, display) {
+            var myWaypoints = [];
+            if (markers.lenght > 2) {
+                myWaypoints = markers;
+                myWaypoints.pop();
+                myWaypoints.shift();
+            }
+
+            service.route(
+                {
+                    origin: markers[0].getPosition(),
+                    destination: markers[markers.length - 1].getPosition(),
+                    waypoints: myWaypoints,
+                    travelMode: google.maps.TravelMode.WALKING,
+                },
+                (result, status) => {
+                    if (status === "OK") {
+                        display.setDirections(result);
+                    } else {
+                        alert("Could not display directions due to: " + status);
+                    }
+                }
+            );
+        }
+
+        function computeTotalDistance(result) {
+            let total = 0;
+            const myroute = result.routes[0];
+
+            for (let i = 0; i < myroute.legs.length; i++) {
+                total += myroute.legs[i].distance.value;
+            }
+            total = total / 1000;
+
+            return total;
+        }
+
+
+        function DistanceBoxControl(controlDiv, map, customName) {
+            // Set CSS for the control border.
+            const controlUI = document.createElement("div");
+            controlUI.style.backgroundColor = "#fff";
+            controlUI.style.border = "2px solid #fff";
+            controlUI.style.borderRadius = "3px";
+            controlUI.style.boxShadow = "0 2px 6px rgba(0,0,0,.3)";
+            controlUI.style.cursor = "pointer";
+            controlUI.style.marginBottom = "22px";
+            controlUI.style.textAlign = "center";
+            controlDiv.appendChild(controlUI);
+            // Set CSS for the control interior.
+            const controlText = document.createElement("div");
+            controlText.style.color = "rgb(25,25,25)";
+            controlText.style.fontFamily = "Roboto,Arial,sans-serif";
+            controlText.style.fontSize = "12px";
+            controlText.style.lineHeight = "20px";
+            controlText.style.paddingLeft = "5px";
+            controlText.style.paddingRight = "5px";
+            controlText.innerHTML = "Route length: " + String(customName) + " km";
+            controlUI.appendChild(controlText);
+
+        }
+
+        function DistanceBox(map, markers, directionsService, directionsRenderer, tmp) {
+            //delete previous record
+            if(tmp) tmp.remove();
+            distance = computeTotalDistance(directionsRenderer.getDirections());
+
+            const ControlDiv = document.createElement("div");
+            DistanceBoxControl(ControlDiv, map, distance);
+            map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(
+                ControlDiv
+            );
+
+            return ControlDiv;
+        }
+
+        function ResetButton(map, markers, directionsService, directionsRenderer) {
+            const deleteresetDiv = document.createElement("div");
+            const control = new deleteControl(deleteresetDiv, map, markers, directionsService, directionsRenderer);
+            deleteresetDiv.index = 1;
+            deleteresetDiv.style.paddingTop = "10px";
+            map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(
+                deleteresetDiv
+            );
+
+        }
+
+        class deleteControl {
+            constructor(resetDiv, map, markers, directionsService, directionsRenderer) {
+                this.map_ = map;
+                this.directionsService = directionsService;
+                this.directionsRenderer = directionsRenderer;
+                // Set the center property upon construction
+                resetDiv.style.clear = "both";
+                // Set CSS for the control border
+                const deleteAllUI = document.createElement("div");
+                deleteAllUI.id = "deleteAllUI";
+                resetDiv.appendChild(deleteAllUI);
+                // Set CSS for the control interior
+                const deleteAllText = document.createElement("div");
+                deleteAllText.id = "deleteAllText";
+                deleteAllText.innerHTML = "Delete all markers";
+                deleteAllUI.appendChild(deleteAllText);
+                // Set CSS for the deleteLast control border
+                const deleteLastUI = document.createElement("div");
+                deleteLastUI.id = "deleteLastUI";
+                resetDiv.appendChild(deleteLastUI);
+                // Set CSS for the control interior
+                const deleteLastText = document.createElement("div");
+                deleteLastText.id = "deleteLastText";
+                deleteLastText.innerHTML = "Delete last marker";
+                deleteLastUI.appendChild(deleteLastText);
+
+                //Delete all markers
+                deleteAllUI.addEventListener("click", () => {
+                    markers.forEach((marker) => {
+                        marker.setMap(null);
+                    });
+                    markers = [];
+                    directionsRenderer.set('directions', null);
+
+                });
+
+                //Delete last marker
+                deleteLastUI.addEventListener("click", () => {
+                    markers[markers.length - 1].setMap(null);
+                    markers.pop();
+                    if (markers.length > 1) {
+                        DrawRoutes(map, markers, directionsService, directionsRenderer);
+                    }
+                });
+            }
+        }
+
+        function boxSetControl(controlDiv, map, customName) {
+            // Set CSS for the control border.
+            const controlUI = document.createElement("div");
+            controlUI.style.backgroundColor = "#fff";
+            controlUI.style.border = "2px solid #fff";
+            controlUI.style.borderRadius = "3px";
+            controlUI.style.boxShadow = "0 2px 6px rgba(0,0,0,.3)";
+            controlUI.style.cursor = "pointer";
+            controlUI.style.marginBottom = "22px";
+            controlUI.style.textAlign = "center";
+            controlDiv.appendChild(controlUI);
+            // Set CSS for the control interior.
+            const controlText = document.createElement("div");
+            controlText.style.color = "rgb(25,25,25)";
+            controlText.style.fontFamily = "Roboto,Arial,sans-serif";
+            controlText.style.fontSize = "12px";
+            controlText.style.lineHeight = "20px";
+            controlText.style.paddingLeft = "5px";
+            controlText.style.paddingRight = "5px";
+            controlText.innerHTML = customName;
+            controlUI.appendChild(controlText);
+            // Setup the click event listeners.
+            controlUI.addEventListener("click", () => {
+                //
+            });
+        }
+
+        function SetPhoto(map, markers) {
+            const ControlDiv = document.createElement("div");
+            boxSetControl(ControlDiv, map, "Place your photo");
+            map.controls[google.maps.ControlPosition.LEFT_TOP].push(
+                ControlDiv
+            );
+        }
+
+        function boxSaveControl(controlDiv, map, customName, markers) {
+            // Set CSS for the control border.
+            const controlUI = document.createElement("div");
+            controlUI.style.backgroundColor = "#fff";
+            controlUI.style.border = "2px solid #fff";
+            controlUI.style.borderRadius = "3px";
+            controlUI.style.boxShadow = "0 2px 6px rgba(0,0,0,.3)";
+            controlUI.style.cursor = "pointer";
+            controlUI.style.marginBottom = "22px";
+            controlUI.style.textAlign = "center";
+            controlDiv.appendChild(controlUI);
+            // Set CSS for the control interior.
+            const controlText = document.createElement("div");
+            controlText.style.color = "rgb(25,25,25)";
+            controlText.style.fontFamily = "Roboto,Arial,sans-serif";
+            controlText.style.fontSize = "12px";
+            controlText.style.lineHeight = "20px";
+            controlText.style.paddingLeft = "5px";
+            controlText.style.paddingRight = "5px";
+            controlText.innerHTML = customName;
+            controlUI.appendChild(controlText);
+            // Setup the click event listeners.
+            controlUI.addEventListener("click", () => {
+                var OriginCoordinates = String(markers[0].getPosition());
+                var DestinationCoordinates = String(markers[1].getPosition());
+                var Origin = String(markers[0].getTitle());
+                var Destination = String(markers[1].getTitle());
+                var RouteLength = "0"; // na sztywno, by przesylalo do bazki
+                $.ajax({
+                    type: "POST",
+                    url: "https://localhost:44336/Routes/CreateJS",
+                    data: { UserId: "1", Origin: Origin, OriginCoordinates: OriginCoordinates, Destination: Destination, DestinationCoordinates: DestinationCoordinates, RouteLength: RouteLength}, 
+                }) // na razie na sztywno userid dopoki nie ogarne jak pobierac uzytkownika
+            });
+        }
+
+        
+
+        function SaveRoute(map, markers) {
+            const ControlDiv = document.createElement("div");
+            const controlUI = document.createElement("div");
+            //var distance = computeTotalDistance(directionsRenderer.getDirections());
+            boxSaveControl(ControlDiv, map, "Save route", markers);
+            map.controls[google.maps.ControlPosition.RIGHT_TOP].push(
+                ControlDiv
+            );
+
+            controlUI.addEventListener("click", () => {
+            });
+        }
+
+    </script>
+</head>
+<body>
+    <h1>Set a route</h1>
+    <input id="pac-input"
+           class="controls"
+           type="text"
+           placeholder="Add dragable marker by address" />
+    <div id="map" class="AnyUnusedClassName"></div>
+
+</body>
+</html>
