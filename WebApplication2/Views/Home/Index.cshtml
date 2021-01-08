@@ -393,7 +393,7 @@
                 $.ajax({
                     type: "POST",
                     url: "https://localhost:44336/Routes/CreateJS",
-                    data: { UserId: "1", Origin: Origin, OriginCoordinates: OriginCoordinates, Destination: Destination, DestinationCoordinates: DestinationCoordinates, RouteLength: RouteLength}, 
+                    data: {Origin: Origin, OriginCoordinates: OriginCoordinates, Destination: Destination, DestinationCoordinates: DestinationCoordinates, RouteLength: RouteLength}, 
                 }) // na razie na sztywno userid dopoki nie ogarne jak pobierac uzytkownika
             });
         }

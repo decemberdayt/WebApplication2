@@ -15,12 +15,12 @@ namespace WebApplication2.Models
     public partial class Route
     {
         public int RouteId { get; set; }
+        public string RouteName { get; set; }
         public string UserId { get; set; }
         public string Origin { get; set; }
         public string OriginCoordinates { get; set; }
         public string Destination { get; set; }
         public string DestinationCoordinates { get; set; }
-        public string RouteName { get; set; }
         public string RouteLength { get; set; }
     
         public virtual AspNetUsers AspNetUsers { get; set; }

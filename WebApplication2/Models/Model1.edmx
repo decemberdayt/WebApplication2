@@ -82,9 +82,9 @@
           <Property Name="RouteName" Type="nvarchar" MaxLength="30" />
           <Property Name="UserId" Type="nvarchar" MaxLength="128" Nullable="false" />
           <Property Name="Origin" Type="nvarchar" MaxLength="150" />
-          <Property Name="OriginCoordinates" Type="nvarchar" MaxLength="30" Nullable="false" />
+          <Property Name="OriginCoordinates" Type="nvarchar" MaxLength="40" Nullable="false" />
           <Property Name="Destination" Type="nvarchar" MaxLength="150" />
-          <Property Name="DestinationCoordinates" Type="nvarchar" MaxLength="30" Nullable="false" />
+          <Property Name="DestinationCoordinates" Type="nvarchar" MaxLength="40" Nullable="false" />
           <Property Name="RouteLength" Type="nvarchar" MaxLength="6" Nullable="false" />
         </EntityType>
         <Association Name="FK_dbo_AspNetUser_dbo_Photo_UserId">
@@ -284,14 +284,14 @@
             <PropertyRef Name="RouteId" />
           </Key>
           <Property Name="RouteId" Type="Int32" Nullable="false" />
+          <Property Name="RouteName" Type="String" MaxLength="30" FixedLength="false" Unicode="true" />
           <Property Name="UserId" Type="String" MaxLength="128" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Origin" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
-          <Property Name="OriginCoordinates" Type="String" MaxLength="30" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="OriginCoordinates" Type="String" MaxLength="40" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Destination" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
-          <Property Name="DestinationCoordinates" Type="String" MaxLength="30" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="DestinationCoordinates" Type="String" MaxLength="40" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="RouteLength" Type="String" MaxLength="6" FixedLength="false" Unicode="true" Nullable="false" />
           <NavigationProperty Name="AspNetUsers" Relationship="Self.FK_dbo_AspNetUserRoles_dbo_Route_UserId" FromRole="Route" ToRole="AspNetUsers" />
-          <Property Name="RouteName" Type="String" Nullable="true" MaxLength="30" FixedLength="false" Unicode="true" />
-          <Property Name="RouteLength" Type="String" Nullable="false" />
         </EntityType>
         <Association Name="FK_dbo_AspNetUserClaims_dbo_AspNetUsers_UserId">
           <End Role="AspNetUsers" Type="Self.AspNetUsers" Multiplicity="1">
@@ -353,7 +353,7 @@
           <End Role="AspNetRoles" Type="Self.AspNetRoles" Multiplicity="*" />
           <End Role="AspNetUsers" Type="Self.AspNetUsers" Multiplicity="*" />
         </Association>
-        <EntityContainer Name="TrackerEntities" annotation:LazyLoadingEnabled="true">
+        <EntityContainer Name="Entities" annotation:LazyLoadingEnabled="true">
           <EntitySet Name="C__MigrationHistory" EntityType="Self.C__MigrationHistory" />
           <EntitySet Name="AspNetRoles" EntityType="Self.AspNetRoles" />
           <EntitySet Name="AspNetUserClaims" EntityType="Self.AspNetUserClaims" />
@@ -387,7 +387,7 @@
     <!-- C-S mapping content -->
     <edmx:Mappings>
       <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
-        <EntityContainerMapping StorageEntityContainer="ModelStoreContainer" CdmEntityContainer="TrackerEntities">
+        <EntityContainerMapping StorageEntityContainer="ModelStoreContainer" CdmEntityContainer="Entities">
           <EntitySetMapping Name="C__MigrationHistory">
             <EntityTypeMapping TypeName="Model.C__MigrationHistory">
               <MappingFragment StoreEntitySet="__MigrationHistory">
@@ -455,14 +455,14 @@
           <EntitySetMapping Name="Route">
             <EntityTypeMapping TypeName="Model.Route">
               <MappingFragment StoreEntitySet="Route">
-                <ScalarProperty Name="RouteLength" ColumnName="RouteLength" />
-                <ScalarProperty Name="RouteName" ColumnName="RouteName" />
                 <ScalarProperty Name="RouteId" ColumnName="RouteId" />
+                <ScalarProperty Name="RouteName" ColumnName="RouteName" />
                 <ScalarProperty Name="UserId" ColumnName="UserId" />
                 <ScalarProperty Name="Origin" ColumnName="Origin" />
                 <ScalarProperty Name="OriginCoordinates" ColumnName="OriginCoordinates" />
                 <ScalarProperty Name="Destination" ColumnName="Destination" />
                 <ScalarProperty Name="DestinationCoordinates" ColumnName="DestinationCoordinates" />
+                <ScalarProperty Name="RouteLength" ColumnName="RouteLength" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

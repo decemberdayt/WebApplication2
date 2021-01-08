@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using Microsoft.AspNet.Identity;
 using System.Linq;
 using System.Net;
 using System.Web;
@@ -12,12 +13,14 @@ namespace WebApplication2.Controllers
 {
     public class RoutesController : Controller
     {
-        private TrackerEntities db = new TrackerEntities();
+        //private ApplicationDbContext db = new ApplicationDbContext();
+        private Entities db = new Entities();
 
         // GET: Routes
         public ActionResult Index()
         {
-            var route = db.Route.Include(r => r.AspNetUsers);
+            String user = User.Identity.GetUserId();
+            var route = db.Route.Include(r => r.AspNetUsers).Where(r => r.UserId == user);
             return View(route.ToList());
         }
 
@@ -75,23 +78,19 @@ namespace WebApplication2.Controllers
 
         // główna funckja wywolywana z poziomu JS
         [HttpPost]
-        public ActionResult CreateJS(String UserId, String Origin, String OriginCoordinates, String Destination, String DestinationCoordinates, String RouteLength)
+        public ActionResult CreateJS(String Origin, String OriginCoordinates, String Destination, String DestinationCoordinates, String RouteLength)
         {
             Route route = new Route();
-            if (UserId != null)
-            {
                 route.RouteId = FindMaxRouteId().RouteId + 1;
                 route.OriginCoordinates = OriginCoordinates;
                 route.Origin = Origin;
+                route.UserId = User.Identity.GetUserId();
                 route.RouteLength = RouteLength;
                 route.Destination = Destination;
                 route.DestinationCoordinates = DestinationCoordinates;
-                route.UserId = UserId;
                 db.Route.Add(route);
                 db.SaveChanges();
                 return RedirectToAction("Index");
-            }
-            return RedirectToAction("Index");
         }
 
         // GET: Routes/Edit/5

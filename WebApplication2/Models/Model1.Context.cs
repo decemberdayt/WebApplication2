@@ -13,10 +13,10 @@ namespace WebApplication2.Models
     using System.Data.Entity;
     using System.Data.Entity.Infrastructure;
     
-    public partial class TrackerEntities : DbContext
+    public partial class Entities : DbContext
     {
-        public TrackerEntities()
-            : base("name=TrackerEntities")
+        public Entities()
+            : base("name=Entities")
         {
         }
     
