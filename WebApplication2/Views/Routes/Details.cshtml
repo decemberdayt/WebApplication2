@@ -11,10 +11,17 @@
     <hr />
     <dl class="dl-horizontal">
         <dt>
-            @Html.DisplayNameFor(model => model.Origin)
+            @Html.DisplayNameFor(model => model.RouteName)
         </dt>
 
         <dd>
+            @Html.DisplayFor(model => model.RouteName)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Origin)
+        </dt>
+
+        <dd id="Origin">
             @Html.DisplayFor(model => model.Origin)
         </dd>
 
@@ -22,7 +29,7 @@
             @Html.DisplayNameFor(model => model.OriginCoordinates)
         </dt>
 
-        <dd>
+        <dd id="OriginCoordinates">
             @Html.DisplayFor(model => model.OriginCoordinates)
         </dd>
 
@@ -30,7 +37,7 @@
             @Html.DisplayNameFor(model => model.Destination)
         </dt>
 
-        <dd>
+        <dd id="Destination">
             @Html.DisplayFor(model => model.Destination)
         </dd>
 
@@ -38,21 +45,189 @@
             @Html.DisplayNameFor(model => model.DestinationCoordinates)
         </dt>
 
-        <dd>
+        <dd id="DestinationCoordinates">
             @Html.DisplayFor(model => model.DestinationCoordinates)
         </dd>
 
-        <dt>
-            @Html.DisplayNameFor(model => model.AspNetUsers.Email)
-        </dt>
-
-        <dd>
-            @Html.DisplayFor(model => model.AspNetUsers.Email)
+        <dd id="RouteID">
+            @Html.HiddenFor(model => model.RouteId)
         </dd>
 
     </dl>
 </div>
 <p>
-    @Html.ActionLink("Edit", "Edit", new { /* id = Model.PrimaryKey */ }) |
+    @Html.ActionLink("Edit", "Edit/" + Model.RouteId) |
     @Html.ActionLink("Back to List", "Index")
 </p>
+<div>
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyDRy0zMHt_FlvgrBiQfzob2HCiLSJfIxmY&callback=callback"
+            async defer>
+    </script>
+    <style type="text/css">
+        /* Without it font in infowindows was white */
+        .AnyUnusedClassName {
+            color: #000000;
+        }
+
+        /*map size*/
+        #map {
+            height: 550px;
+            width: 100%;
+        }
+    </style>
+
+    <script>
+        //
+        //google api callback/main
+        function callback() {
+            //map
+            const map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 52.229676, lng: 21.012229 },
+                zoom: 11,
+                mapTypeId: "roadmap",
+                disableDefaultUI: true,
+                //no ctrl+scroll zoom but only scroll
+                gestureHandling: 'greedy'
+            });
+            //array with map markers
+            var markers = [];
+            var imageMarkers = [];
+
+            var coordinatesString = document.getElementById("OriginCoordinates").innerHTML;
+            coordinatesString = coordinatesString.replace("(", "");
+            coordinatesString = coordinatesString.replace(")", "");
+            var originLat = Number(coordinatesString.split(",")[0]);
+            var originLng = Number(coordinatesString.split(",")[1]);
+
+            var marker = new google.maps.Marker({
+                map,
+                title: document.getElementById("Origin").innerHTML,
+                position: { lat: originLat, lng: originLng},
+                label: "" + (markers.length + 1),
+                //draggable: true,
+            });
+            markers.push(marker);
+
+            var coordinatesString = document.getElementById("DestinationCoordinates").innerHTML;
+            coordinatesString = coordinatesString.replace("(", "");
+            coordinatesString = coordinatesString.replace(")", "");
+            var destinationLat = Number(coordinatesString.split(",")[0]);
+            var destinationLng = Number(coordinatesString.split(",")[1]);
+
+            var marker = new google.maps.Marker({
+                map,
+                title: document.getElementById("Destination").innerHTML,
+                position: { lat: destinationLat, lng: destinationLng },
+                label: "" + (markers.length + 1),
+                //draggable: true,
+            });
+            markers.push(marker);
+
+            //for drawing routes
+            const directionsService = new google.maps.DirectionsService();
+            const directionsRenderer = new google.maps.DirectionsRenderer({
+                draggable: true,
+                map,
+                suppressMarkers: true
+            });
+
+            // markers address
+            if (!window.infowindow) {
+                window.infowindow = new google.maps.InfoWindow();
+            }
+
+            google.maps.event.addListener(marker, "click", () => {
+                infowindow.close();
+                //setting info window
+                infowindow.setContent(String(marker.getTitle())),
+                    infowindow.open(map, marker);
+            });
+
+            DrawRoutes(map, markers, directionsService, directionsRenderer);
+
+            let tmp;
+            distance = computeTotalDistance(directionsRenderer.getDirections());
+            console.log(directionsRenderer.getDirections());
+            tmp = DistanceBox(map, markers, distance, tmp);
+
+        }
+
+        function DrawRoutes(map, markers, service, display) {
+            const waypts = [];
+
+            for (var j = 1; j < markers.length - 1; j++) {
+                waypts.push({
+                    location: markers[j].getPosition(),
+                    stopover: false,
+                });
+            }
+
+            service.route(
+                {
+                    origin: markers[0].getPosition(),
+                    destination: markers[markers.length - 1].getPosition(),
+                    waypoints: waypts,
+                    travelMode: google.maps.TravelMode.WALKING,
+                },
+                (result, status) => {
+                    if (status === "OK") {
+                        display.setDirections(result);
+                    } else {
+                        alert("Could not display directions due to: " + status);
+                    }
+                }
+            );
+        }
+
+        function computeTotalDistance(result) {
+            let total = 0;
+            const myroute = result.routes[0];
+
+            for (let i = 0; i < myroute.legs.length; i++) {
+                total += myroute.legs[i].distance.value;
+            }
+            total = total / 1000;
+
+            return total;
+        }
+
+
+        function DistanceBoxControl(controlDiv, map, customName) {
+            // Set CSS for the control border.
+            const controlUI = document.createElement("div");
+            controlUI.style.backgroundColor = "#fff";
+            controlUI.style.border = "2px solid #fff";
+            controlUI.style.borderRadius = "3px";
+            controlUI.style.boxShadow = "0 2px 6px rgba(0,0,0,.3)";
+            controlUI.style.cursor = "pointer";
+            controlUI.style.marginBottom = "22px";
+            controlUI.style.textAlign = "center";
+            controlDiv.appendChild(controlUI);
+            // Set CSS for the control interior.
+            const controlText = document.createElement("div");
+            controlText.style.color = "rgb(25,25,25)";
+            controlText.style.fontFamily = "Roboto,Arial,sans-serif";
+            controlText.style.fontSize = "12px";
+            controlText.style.lineHeight = "20px";
+            controlText.style.paddingLeft = "5px";
+            controlText.style.paddingRight = "5px";
+            controlText.innerHTML = "Route length: " + String(customName) + " km";
+            controlUI.appendChild(controlText);
+
+        }
+
+        function DistanceBox(map, markers, distance, tmp) {
+            //delete previous record
+            if (tmp) tmp.remove();
+
+            const ControlDiv = document.createElement("div");
+            DistanceBoxControl(ControlDiv, map, distance);
+            map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(
+                ControlDiv
+            );
+
+            return ControlDiv;
+        }
+    </script>
+    <div id="map" class="AnyUnusedClassName"></div>
+</div>

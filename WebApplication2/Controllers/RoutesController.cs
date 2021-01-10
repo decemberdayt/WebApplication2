@@ -114,7 +114,7 @@ namespace WebApplication2.Controllers
         // Aby uzyskać więcej szczegółów, zobacz https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "RouteId,UserId,Origin,OriginCoordinates,Destination,DestinationCoordinates")] Route route)
+        public ActionResult Edit([Bind(Include = "RouteId,RouteName,UserId,Origin,OriginCoordinates,Destination,DestinationCoordinates,RouteLength")] Route route)
         {
             if (ModelState.IsValid)
             {
