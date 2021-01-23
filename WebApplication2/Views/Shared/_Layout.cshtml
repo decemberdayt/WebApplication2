@@ -18,14 +18,25 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                @Html.ActionLink("TrackerWAT", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+                @Html.ActionLink("TrackerWAT", "About", "Home", new { area = "" }, new { @class = "navbar-brand"})
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li>@Html.ActionLink("Start", "Index", "Home")</li>
-                    <li>@Html.ActionLink("Information", "About", "Home")</li>
+                    <li>@Html.ActionLink("New Route", "Index", "Home")</li>
                     <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
                     <li>@Html.ActionLink("My Routes", "Index", "Routes")</li>
+                    <li>@Html.ActionLink("My Photos", "Index", "Photos")</li>
+
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        if (User.IsInRole("Admin"))
+                        {
+                             <li>@Html.ActionLink("View Role", "Index", "Role", null, new { id = "OT", style = "color: yellow" })</li>
+                             <li>@Html.ActionLink("Create Role", "Create", "Role", null, new { id = "OT", style = "color: yellow" })</li>
+                             <li>@Html.ActionLink("Assign Role", "RegisterRole", "Account", null, new { id = "OT", style = "color: yellow" })</li>
+                        }
+                    }
+
                 </ul>
                 @Html.Partial("_LoginPartial")
             </div>

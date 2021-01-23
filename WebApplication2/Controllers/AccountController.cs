@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
 using WebApplication2.Models;
@@ -18,8 +19,11 @@ namespace WebApplication2.Controllers
         private ApplicationSignInManager _signInManager;
         private ApplicationUserManager _userManager;
 
+        private ApplicationDbContext context;
+
         public AccountController()
         {
+            context = new ApplicationDbContext();
         }
 
         public AccountController(ApplicationUserManager userManager, ApplicationSignInManager signInManager )
@@ -149,27 +153,68 @@ namespace WebApplication2.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Register(RegisterViewModel model)
         {
-            if (ModelState.IsValid)
+            using (var context = new ApplicationDbContext())
             {
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-                var result = await UserManager.CreateAsync(user, model.Password);
-                if (result.Succeeded)
+                if (ModelState.IsValid)
                 {
-                    await SignInManager.SignInAsync(user, isPersistent:false, rememberBrowser:false);
-                    
-                    // Aby uzyskać więcej informacji o sposobie włączania potwierdzania konta i resetowaniu hasła, odwiedź stronę https://go.microsoft.com/fwlink/?LinkID=320771
-                    // Wyślij wiadomość e-mail z tym łączem
-                    // string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
-                    // var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
-                    // await UserManager.SendEmailAsync(user.Id, "Potwierdź konto", "Potwierdź konto, klikając <a href=\"" + callbackUrl + "\">tutaj</a>");
+                    var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                    var result = await UserManager.CreateAsync(user, model.Password);
 
-                    return RedirectToAction("Index", "Home");
+                    var roleStore = new RoleStore<IdentityRole>(context);
+                    var roleManager = new RoleManager<IdentityRole>(roleStore);
+
+                    var userStore = new UserStore<ApplicationUser>(context);
+                    var userManager = new UserManager<ApplicationUser>(userStore);
+                    userManager.AddToRole(user.Id, "User");
+
+
+                    if (result.Succeeded)
+                    {
+                        await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
+
+                        // Aby uzyskać więcej informacji o sposobie włączania potwierdzania konta i resetowaniu hasła, odwiedź stronę https://go.microsoft.com/fwlink/?LinkID=320771
+                        // Wyślij wiadomość e-mail z tym łączem
+                        // string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
+                        // var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                        // await UserManager.SendEmailAsync(user.Id, "Potwierdź konto", "Potwierdź konto, klikając <a href=\"" + callbackUrl + "\">tutaj</a>");
+
+                        return RedirectToAction("Index", "Home");
+                    }
+                    AddErrors(result);
                 }
-                AddErrors(result);
             }
 
             // Dotarcie do tego miejsca wskazuje, że wystąpił błąd, wyświetl ponownie formularz
             return View(model);
+        }
+
+        // GET: /Account/RegisterRole
+        [AllowAnonymous]
+        [HttpGet]
+        public ActionResult RegisterRole()
+        {
+            ViewBag.Name = new SelectList(context.Roles.ToList(), "Name", "Name");
+            ViewBag.UserName = new SelectList(context.Users.ToList(), "UserName", "UserName");
+            return View();
+        }
+
+
+        // POST: /Account/RegisterRole
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> RegisterRole(RegisterViewModel model, ApplicationUser user)
+        {
+            var userId = context.Users.Where(i => i.UserName == user.UserName).Select(s => s.Id);
+            string updateId = "";
+            foreach (var i in userId)
+            {
+                updateId = i.ToString();
+            }
+
+            //assign roles
+            await this.UserManager.AddToRoleAsync(updateId, model.Name);
+            return RedirectToAction("Index", "Home");
         }
 
         //

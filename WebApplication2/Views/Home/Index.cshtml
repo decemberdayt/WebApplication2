@@ -90,11 +90,19 @@
         }
     </style>
     <script>
-        //
+        var distance = 0;
+        var directionsService;
+        var directionsRenderer;
+        var markers = [];
+        var imageMarkers = [];
+        var routes = [];
+        var map;
+        var imageUrls = [];
+
         //google api callback/main
         function callback() {
-            //map
-            const map = new google.maps.Map(document.getElementById("map"), {
+
+            map = new google.maps.Map(document.getElementById("map"), {
                 center: { lat: 52.229676, lng: 21.012229 },
                 zoom: 11,
                 mapTypeId: "roadmap",
@@ -103,36 +111,35 @@
                 gestureHandling: 'greedy'
             });
             //array with map markers
-            var markers = [];
-            var imageMarkers = [];
 
-            //for drawing routes
-            const directionsService = new google.maps.DirectionsService();
-            const directionsRenderer = new google.maps.DirectionsRenderer({
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer({
                 draggable: true,
                 map,
                 suppressMarkers: true
             });
+            
 
             //searchbox with routes drawing
-            SearchBox(map, markers, directionsService, directionsRenderer);
+            SearchBox();
             //deleting markers with routes
-            ResetButton(map, markers, directionsService, directionsRenderer);
-            SetPhoto(map, markers, imageMarkers);
-            DeleteImage(map, imageMarkers);
-            var distance = 0;
+            ResetButton();
+            SetPhoto();
+            DeleteImage();
 
             //delete previus total distance before creating new
-            let tmp;
+            let tmp, tmp2;
             directionsRenderer.addListener("directions_changed", () => {
-                distance = computeTotalDistance(directionsRenderer.getDirections());
-                tmp = DistanceBox(map, markers, distance, tmp);
+                distance = computeTotalDistance(directionsRenderer.getDirections());     
+                tmp = DistanceBox(tmp);
+                tmp2 = SaveRoute(tmp2);
+
             });
 
-            SaveRoute(map, markers, distance);
+            
         }
 
-        function SearchBox(map, markers, directionsService, directionsRenderer) {
+        function SearchBox() {
 
             // Create the search box and link it to the UI element.
             const input = document.getElementById("pac-input");
@@ -175,7 +182,7 @@
                     markers.push(marker);
 
                     if (markers.length > 1) {
-                        DrawRoutes(map, markers, directionsService, directionsRenderer);
+                        routes = DrawRoutes();
                     }
 
                     // markers address
@@ -190,14 +197,22 @@
                             infowindow.open(map, marker);
                     });
 
+                    if (place.geometry.viewport) {
+                        // Only geocodes have viewport.
+                        bounds.union(place.geometry.viewport);
+                    } else {
+                        bounds.extend(place.geometry.location);
+                    }
                 });
+                //center map to marker
+                map.fitBounds(bounds);
 
             });
 
         }
 
-        function DrawRoutes(map, markers, service, display, myWaypoints) {
-            const waypts = [];
+        function DrawRoutes() {
+            var waypts = [];
 
             for (var j = 1; j < markers.length - 1; j++) {
                 waypts.push({
@@ -206,7 +221,7 @@
                 });
             }
 
-            service.route(
+            directionsService.route(
                 {
                     origin: markers[0].getPosition(),
                     destination: markers[markers.length - 1].getPosition(),
@@ -215,7 +230,8 @@
                 },
                 (result, status) => {
                     if (status === "OK") {
-                        display.setDirections(result);
+                        directionsRenderer.setDirections(result);
+                        routes.push(result);
                     } else {
                         alert("Could not display directions due to: " + status);
                     }
@@ -236,7 +252,7 @@
         }
 
 
-        function DistanceBoxControl(controlDiv, map, customName) {
+        function DistanceBoxControl(controlDiv, markers) {
             // Set CSS for the control border.
             const controlUI = document.createElement("div");
             controlUI.style.backgroundColor = "#fff";
@@ -255,17 +271,18 @@
             controlText.style.lineHeight = "20px";
             controlText.style.paddingLeft = "5px";
             controlText.style.paddingRight = "5px";
-            controlText.innerHTML = "Route length: " + String(customName) + " km";
+            controlText.innerHTML = "Route length: " + String(distance) + " km";
             controlUI.appendChild(controlText);
 
         }
 
-        function DistanceBox(map, markers, distance, tmp) {
+        function DistanceBox(tmp) {
+
             //delete previous record
             if (tmp) tmp.remove();
 
             const ControlDiv = document.createElement("div");
-            DistanceBoxControl(ControlDiv, map, distance);
+            DistanceBoxControl(ControlDiv);
             map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(
                 ControlDiv
             );
@@ -273,9 +290,9 @@
             return ControlDiv;
         }
 
-        function ResetButton(map, markers, directionsService, directionsRenderer) {
+        function ResetButton() {
             const deleteresetDiv = document.createElement("div");
-            const control = new deleteControl(deleteresetDiv, map, markers, directionsService, directionsRenderer);
+            const control = new deleteControl(deleteresetDiv);
             deleteresetDiv.index = 1;
             deleteresetDiv.style.paddingTop = "10px";
             map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(
@@ -285,10 +302,7 @@
         }
 
         class deleteControl {
-            constructor(resetDiv, map, markers, directionsService, directionsRenderer) {
-                this.map_ = map;
-                this.directionsService = directionsService;
-                this.directionsRenderer = directionsRenderer;
+            constructor(resetDiv) {
                 // Set the center property upon construction
                 resetDiv.style.clear = "both";
                 // Set CSS for the control border
@@ -298,7 +312,7 @@
                 // Set CSS for the control interior
                 const deleteAllText = document.createElement("div");
                 deleteAllText.id = "deleteAllText";
-                deleteAllText.innerHTML = "Delete all palce markers";
+                deleteAllText.innerHTML = "Delete all place markers";
                 deleteAllUI.appendChild(deleteAllText);
                 // Set CSS for the deleteLast control border
                 const deleteLastUI = document.createElement("div");
@@ -316,22 +330,24 @@
                         marker.setMap(null);
                     });
                     markers = [];
-                    directionsRenderer.set('directions', null);
+                   
 
+                    directionsRenderer.setDirections({ routes: [] });
                 });
 
                 //Delete last marker
                 deleteLastUI.addEventListener("click", () => {
                     markers[markers.length - 1].setMap(null);
                     markers.pop();
+                    directionsRenderer.setDirections({ routes: [] });
                     if (markers.length > 1) {
-                        DrawRoutes(map, markers, directionsService, directionsRenderer);
+                        DrawRoutes();
                     }
                 });
             }
         }
 
-        function boxSetControl(controlDiv, map, customName, imageMarkers) {
+        function boxSetControl(controlDiv, customName) {
             // Set CSS for the control border.
             const controlUI = document.createElement("div");
             controlUI.style.backgroundColor = "#fff";
@@ -352,7 +368,8 @@
             controlText.style.paddingRight = "5px";
             controlText.innerHTML = customName;
             controlUI.appendChild(controlText);
-            // Setup the click event listeners.
+            //add listener
+            console.log("imageUrls: ", imageUrls[0]);
             controlUI.addEventListener("click", () => {
                 infowindowimage = new google.maps.InfoWindow({
                     content: "no image provided"
@@ -366,8 +383,9 @@
                         draggable: true,
                     });
                     imageMarkers.push(imageMarker);
-                    var imageUrl = getImage;
-                    infowindowimage.setContent("<div style='float:left'><img src=" + imageUrl + "></div>");
+                    imageUrls.push(getImage);
+
+                    infowindowimage.setContent("<div style='float:left'><img src=" + getImage + "></div>");
 
                 }
 
@@ -378,16 +396,16 @@
             });
         }
 
-        function SetPhoto(map, markers, imageMarkers) {
+        function SetPhoto() {
             const ControlDiv = document.createElement("div");
-            boxSetControl(ControlDiv, map, "Photo-marker using url", imageMarkers);
+            boxSetControl(ControlDiv, "Paste photo-marker using url");
             map.controls[google.maps.ControlPosition.LEFT_TOP].push(
                 ControlDiv
             );
 
         }
 
-        function boxDeleteImageControl(controlDiv, map, customName, imageMarkers) {
+        function boxDeleteImageControl(controlDiv, customName) {
             // Set CSS for the control border.
             const controlUI = document.createElement("div");
             controlUI.style.backgroundColor = "#fff";
@@ -412,19 +430,20 @@
             controlUI.addEventListener("click", () => {
                 imageMarkers[imageMarkers.length - 1].setMap(null);
                 imageMarkers.pop();
+                imageUrls.pop();
             });
         }
 
-        function DeleteImage(map, imageMarkers) {
+        function DeleteImage() {
             const ControlDiv = document.createElement("div");
-            boxDeleteImageControl(ControlDiv, map, "Delete last", imageMarkers);
+            boxDeleteImageControl(ControlDiv, "Delete last photo");
             map.controls[google.maps.ControlPosition.LEFT_TOP].push(
                 ControlDiv
             );
         }
 
 
-        function boxSaveControl(controlDiv, map, customName, markers) {
+        function boxSaveControl(controlDiv, customName) {
             // Set CSS for the control border.
             const controlUI = document.createElement("div");
             controlUI.style.backgroundColor = "#fff";
@@ -451,27 +470,60 @@
                 var DestinationCoordinates = String(markers[1].getPosition());
                 var Origin = String(markers[0].getTitle());
                 var Destination = String(markers[1].getTitle());
-                var RouteLength = "0"; // na sztywno, by przesylalo do bazki
+                var routeId = $.ajax({
+                    type: "GET",
+                    url: "https://localhost:44336/Routes/FindMaxRouteId",
+                    async: false,
+                }).responseText;
+                var newRouteId = parseInt(routeId) + 1;
+                // POST trasa
                 $.ajax({
                     type: "POST",
                     url: "https://localhost:44336/Routes/CreateJS",
-                    data: { Origin: Origin, OriginCoordinates: OriginCoordinates, Destination: Destination, DestinationCoordinates: DestinationCoordinates, RouteLength: RouteLength },
-                }) // na razie na sztywno userid dopoki nie ogarne jak pobierac uzytkownika
+                    data: { RouteId: newRouteId, Origin: Origin, OriginCoordinates: OriginCoordinates, Destination: Destination, DestinationCoordinates: DestinationCoordinates, RouteLength: distance },
+                });
+                var i;
+                
+                for (i = 0; i < imageMarkers.length; i++) {
+                    $.ajax({
+                    type: "POST",
+                    url: "https://localhost:44336/Photos/SavePhoto",
+                        data: { Coordinates: String(imageMarkers[i].position), PhotoUrl: imageUrls[i], RouteId: newRouteId},
+                        async: false,
+                    })
+                }
             });
         }
 
-        function SaveRoute(map, markers, distance) {
+        function SaveRoute(tmp2) {
+
+            //delete previous record
+            if (tmp2) tmp2.remove();
+
+
             const ControlDiv = document.createElement("div");
-            boxSaveControl(ControlDiv, map, "Save route", markers);
+            boxSaveControl(ControlDiv,"Save route and markers");
             map.controls[google.maps.ControlPosition.RIGHT_TOP].push(
                 ControlDiv
             );
+
+            return ControlDiv;
         }
 
     </script>
 </head>
 <body>
-    <h1>Set a route</h1>
+    <h2>New route</h2>
+    <p>
+        Hello! Welcome! <br /> <br />
+        Click on 'Add marker by address' to choose and mark a location! <br />
+        Add two locations to draw a route. <br />
+        Click on 'Paste photo-marker using url' to add markers with your photos. Drag and drop them wherever you want.
+        <br /> <br />
+        Enjoy!
+    </p>
+    <hr />
+    <br>
     <input id="pac-input"
            class="controls"
            type="text"

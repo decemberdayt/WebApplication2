@@ -1,12 +1,16 @@
+drop table [dbo].[Route];
+drop table [dbo].[Photo];
+
+
 CREATE TABLE [dbo].[Route]
 (
 	[RouteId] INT NOT NULL,
 	[RouteName] NVARCHAR(30) NULL,
 	[UserId] NVARCHAR (128) NOT NULL,
 	[Origin] NVARCHAR (150) NULL,
-	[OriginCoordinates] NVARCHAR (30) NOT NULL,
+	[OriginCoordinates] NVARCHAR (50) NOT NULL,
 	[Destination] NVARCHAR (150) NULL,
-	[DestinationCoordinates] NVARCHAR (30) NOT NULL,
+	[DestinationCoordinates] NVARCHAR (50) NOT NULL,
 	[RouteLength] NVARCHAR(6) NOT NULL,
 	CONSTRAINT [PK_dbo.Route] PRIMARY KEY CLUSTERED ([RouteId] ASC),
 	CONSTRAINT [FK_dbo.AspNetUserRoles_dbo.Route_UserId] FOREIGN KEY ([UserId]) REFERENCES [dbo].[AspNetUsers] ([Id]) ON DELETE CASCADE
@@ -28,9 +32,12 @@ CREATE TABLE [dbo].[Photo]
 (
 	[PhotoId] INT NOT NULL,
 	[UserId] NVARCHAR (128) NOT NULL,
-	[Coordinates] NVARCHAR (30) NOT NULL,
+	[RouteId] INT NULL,
+	[Coordinates] NVARCHAR (50) NOT NULL,
+	[PhotoUrl] NVARCHAR(200) NOT NULL,
 	CONSTRAINT [PK_dbo.Photo] PRIMARY KEY CLUSTERED ([PhotoId] ASC),
-	CONSTRAINT [FK_dbo.AspNetUser_dbo.Photo_UserId] FOREIGN KEY ([UserId]) REFERENCES [dbo].[AspNetUsers] ([Id]) ON DELETE CASCADE
+	CONSTRAINT [FK_dbo.AspNetUser_dbo.Photo_UserId] FOREIGN KEY ([UserId]) REFERENCES [dbo].[AspNetUsers] ([Id]) ON DELETE CASCADE,
+	CONSTRAINT [FK_dbo.Route_RouteId_dbo.Photo_RouteId] FOREIGN KEY ([RouteId]) REFERENCES [dbo].[Route] ([RouteId]) ON DELETE NO ACTION
 );
 
 GO

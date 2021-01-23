@@ -8,20 +8,23 @@ using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using WebApplication2.Models;
+using WebApplication2.Services;
 
 namespace WebApplication2.Controllers
 {
+    [Authorize]
     public class RoutesController : Controller
     {
-        //private ApplicationDbContext db = new ApplicationDbContext();
         private Entities db = new Entities();
+        private RouteService _routeService = new RouteService();
+        private PhotoService _photoService = new PhotoService();
+
 
         // GET: Routes
         public ActionResult Index()
         {
-            String user = User.Identity.GetUserId();
-            var route = db.Route.Include(r => r.AspNetUsers).Where(r => r.UserId == user);
-            return View(route.ToList());
+            var items = _routeService.GetAll(User.Identity.GetUserId());
+            return View(items);
         }
 
         // GET: Routes/Details/5
@@ -31,7 +34,7 @@ namespace WebApplication2.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Route route = db.Route.Find(id);
+            Route route = _routeService.FindById(id);
             if (route == null)
             {
                 return HttpNotFound();
@@ -39,16 +42,6 @@ namespace WebApplication2.Controllers
             return View(route);
         }
 
-        public Route FindMaxRouteId()
-        {
-            Route route = db.Route.OrderByDescending(u => u.RouteId).FirstOrDefault();
-            if(route==null)
-            {
-                route = new Route();
-                route.RouteId = 0;
-            }
-            return route;
-        }
 
         // GET: Routes/Create
         public ActionResult Create()
@@ -66,7 +59,7 @@ namespace WebApplication2.Controllers
         {
             if (ModelState.IsValid)
             {
-                route.RouteId = FindMaxRouteId().RouteId + 1;
+                route.RouteId = _routeService.FindMaxRouteId() + 1;
                 db.Route.Add(route);
                 db.SaveChanges();
                 return RedirectToAction("Index");
@@ -76,21 +69,18 @@ namespace WebApplication2.Controllers
             return View(route);
         }
 
-        // główna funckja wywolywana z poziomu JS
+        // główna funkcja wywolywana z poziomu JS
         [HttpPost]
-        public ActionResult CreateJS(String Origin, String OriginCoordinates, String Destination, String DestinationCoordinates, String RouteLength)
+        public ActionResult CreateJS(int RouteId, String Origin, String OriginCoordinates, String Destination, String DestinationCoordinates, String RouteLength)
         {
-            Route route = new Route();
-                route.RouteId = FindMaxRouteId().RouteId + 1;
-                route.OriginCoordinates = OriginCoordinates;
-                route.Origin = Origin;
-                route.UserId = User.Identity.GetUserId();
-                route.RouteLength = RouteLength;
-                route.Destination = Destination;
-                route.DestinationCoordinates = DestinationCoordinates;
-                db.Route.Add(route);
-                db.SaveChanges();
-                return RedirectToAction("Index");
+            String user = User.Identity.GetUserId();
+            var result = _routeService.CreateJS(RouteId, Origin, OriginCoordinates, Destination, DestinationCoordinates, RouteLength, user);
+            return RedirectToAction("Index");
+        }
+
+        public int FindMaxRouteId()
+        {
+            return _routeService.FindMaxRouteId();
         }
 
         // GET: Routes/Edit/5
@@ -147,6 +137,7 @@ namespace WebApplication2.Controllers
         public ActionResult DeleteConfirmed(int id)
         {
             Route route = db.Route.Find(id);
+            _photoService.UpdateRouteIdOnDelete(id);
             db.Route.Remove(route);
             db.SaveChanges();
             return RedirectToAction("Index");

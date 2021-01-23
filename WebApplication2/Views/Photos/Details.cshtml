@@ -9,26 +9,96 @@
 <div>
     <h4>Photo</h4>
     <hr />
+
+    <a href="link.jpg" id="link"><img class="pics" src="link" alt="Photo"/></a>
+    <hr />
     <dl class="dl-horizontal">
+        <dt hidden>
+            @Html.DisplayNameFor(model => model.PhotoUrl)
+        </dt>
+        <dd id="photoUrl" hidden>
+            @Html.DisplayFor(model => model.PhotoUrl)
+        </dd>
         <dt>
             @Html.DisplayNameFor(model => model.Coordinates)
         </dt>
-
-        <dd>
+        <dd id="Coordinates">
             @Html.DisplayFor(model => model.Coordinates)
-        </dd>
-
-        <dt>
-            @Html.DisplayNameFor(model => model.AspNetUsers.Email)
-        </dt>
-
-        <dd>
-            @Html.DisplayFor(model => model.AspNetUsers.Email)
         </dd>
 
     </dl>
 </div>
+<div id="map" class="AnyUnusedClassName"></div>
+<hr />
 <p>
-    @Html.ActionLink("Edit", "Edit", new { id = Model.PhotoId }) |
     @Html.ActionLink("Back to List", "Index")
 </p>
+
+<style type="text/css">
+    /* Without it font in infowindows was white */
+    .AnyUnusedClassName {
+        color: #000000;
+    }
+
+    /*map size*/
+    #map {
+        height: 550px;
+        width: 100%;
+    }
+    .pics {
+        object-fit: cover;
+/*        width: 600px;
+        height: 500px;*/
+        width: 100%;
+        height; 100%;
+    }
+</style>
+<script src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyDRy0zMHt_FlvgrBiQfzob2HCiLSJfIxmY&callback=callback"
+        async defer>
+</script>
+<script>
+    var photoUrl = document.getElementById("photoUrl").innerHTML;
+    var image = document.getElementsByClassName("pics")[0];
+    image.src = photoUrl;
+    var link = document.getElementById("link");
+    link.href = photoUrl;
+    //
+    var coordinatesString = document.getElementById("Coordinates").innerHTML;
+    coordinatesString = coordinatesString.replace("(", "");
+    coordinatesString = coordinatesString.replace(")", "");
+    var originLat = Number(coordinatesString.split(",")[0]);
+    var originLng = Number(coordinatesString.split(",")[1]);
+
+    //google api callback/main
+    function callback() {
+        //map
+        const map = new google.maps.Map(document.getElementById("map"), {
+            center: { lat: originLat, lng: originLng },
+            zoom: 11,
+            mapTypeId: "roadmap",
+            disableDefaultUI: true,
+            //no ctrl+scroll zoom but only scroll
+            gestureHandling: 'greedy'
+        });
+        //array with map markers
+        var markers = [];
+        var imageMarkers = [];
+
+        
+
+        var marker = new google.maps.Marker({
+            map,
+            title: "",
+            position: { lat: originLat, lng: originLng },
+            label: "",
+            //draggable: true,
+        });
+        markers.push(marker);
+
+
+        // markers address
+        if (!window.infowindow) {
+            window.infowindow = new google.maps.InfoWindow();
+        }
+    }
+</script>

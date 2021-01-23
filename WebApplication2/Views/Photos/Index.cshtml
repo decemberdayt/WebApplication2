@@ -1,39 +1,82 @@
 ﻿@model IEnumerable<WebApplication2.Models.Photo>
 
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "My Photos";
 }
 
-<h2>Index</h2>
+<h2>My Photos</h2>
 
 <p>
-    @Html.ActionLink("Create New", "Create")
+    @Html.ActionLink("Create New", "Index", "Home")
 </p>
-<table class="table">
+<table class="table" style="width: 500px">
     <tr>
-        <th>
+        <th style="width:200px">
             @Html.DisplayNameFor(model => model.Coordinates)
         </th>
-        <th>
-            @Html.DisplayNameFor(model => model.AspNetUsers.Email)
+        <th hidden style="width: 0px">
+            @Html.DisplayNameFor(model => model.PhotoUrl)
+        </th>
+        <th style="width: 200px">
+            "Photo"
         </th>
         <th></th>
     </tr>
 
 @foreach (var item in Model) {
-    <tr>
-        <td>
-            @Html.DisplayFor(modelItem => item.Coordinates)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.AspNetUsers.Email)
-        </td>
-        <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.PhotoId }) |
-            @Html.ActionLink("Details", "Details", new { id=item.PhotoId }) |
-            @Html.ActionLink("Delete", "Delete", new { id=item.PhotoId })
-        </td>
-    </tr>
+<tr>
+    <td>
+        @Html.DisplayFor(modelItem => item.Coordinates)
+    </td>
+    <td class="photoUrl" hidden>
+        @Html.DisplayFor(modelItem => item.PhotoUrl)
+    </td>
+    <td>
+        <a href="link.jpg" class="link"><img class="pics" src="link" alt="Photo" width="150" height="150" /></a>
+</td>
+    <td>
+        @Html.ActionLink("Details", "Details/" + item.PhotoId) |
+        @Html.ActionLink("Delete", "Delete/" + item.PhotoId)
+    </td>
+</tr>
 }
-
 </table>
+
+<div>
+    <script>
+        
+        var i;
+        for (i = 0; i < document.getElementsByClassName("photoUrl").length; i++) {
+            var photoUrl = document.getElementsByClassName("photoUrl")[i].textContent;
+            console.log("photoUrl ", photoUrl);
+            var image = document.getElementsByClassName("pics")[i];
+            image.src = photoUrl;
+            var link = document.getElementsByClassName("link")[i];
+            link.href = photoUrl;
+        }
+    </script>
+    <style>
+        .table {
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .pics {
+            object-fit: cover;
+            width: 150px;
+            height: 150px;
+        }
+
+        .table th {
+            background-color: #df691a;
+            color: white;
+        }
+
+        .table td, .table th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        .table tr:nth-child(even) {
+            background-color: #415464;
+        }
+    </style>

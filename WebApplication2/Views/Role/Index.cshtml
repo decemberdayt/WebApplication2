@@ -1,0 +1,25 @@
+﻿@model IEnumerable<Microsoft.AspNet.Identity.EntityFramework.IdentityRole>
+
+@{ ViewBag.Title = "Index"; }
+
+
+<div class="section-padding">
+    <h3>Available Roles</h3>
+    <br /><br />
+
+    <table style='font-size: 14px; color: yellow'>
+
+        @foreach (var item in Model)
+        {
+<tr>
+    <th>@item.Name</th>
+</tr>}
+    </table>
+    <br /><br />
+
+</div>
+
+
+
+
+

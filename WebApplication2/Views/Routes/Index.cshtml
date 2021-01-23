@@ -1,10 +1,10 @@
 ﻿@model IEnumerable<WebApplication2.Models.Route>
 
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "My Routes";
 }
 
-<h2>Index</h2>
+<h2>My Routes</h2>
 
 <p>
     @Html.ActionLink("Create New", "Index","Home")
@@ -25,6 +25,9 @@
         </th>
         <th>
             @Html.DisplayNameFor(model => model.DestinationCoordinates)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.RouteLength)
         </th>
         <th>
             @Html.DisplayNameFor(model => model.AspNetUsers.Email)
@@ -50,12 +53,34 @@
         @Html.DisplayFor(modelItem => item.DestinationCoordinates)
     </td>
     <td>
+        @Html.DisplayFor(modelItem => item.RouteLength)
+    </td>
+    <td>
         @Html.DisplayFor(modelItem => item.AspNetUsers.Email)
     </td>
     <td>
-        @Html.ActionLink("Edit", "Edit/" + item.RouteId)|@Html.ActionLink("Details", "Details/" + item.RouteId)|@Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
+        @Html.ActionLink("Edit", "Edit/" + item.RouteId) | @Html.ActionLink("Details", "Details/" + item.RouteId) | @Html.ActionLink("Delete", "Delete/" + item.RouteId, new { /* id=item.PrimaryKey */ })
     </td>
 </tr>
 }
 
 </table>
+<style>
+    .table {
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .table th {
+        background-color: #df691a;
+        color: white;
+    }
+
+    .table td, .table th {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    .table tr:nth-child(even) {
+        background-color: #415464;
+    }
+</style>

@@ -72,7 +72,9 @@
           </Key>
           <Property Name="PhotoId" Type="int" Nullable="false" />
           <Property Name="UserId" Type="nvarchar" MaxLength="128" Nullable="false" />
-          <Property Name="Coordinates" Type="nvarchar" MaxLength="30" Nullable="false" />
+          <Property Name="RouteId" Type="int" />
+          <Property Name="Coordinates" Type="nvarchar" MaxLength="50" Nullable="false" />
+          <Property Name="PhotoUrl" Type="nvarchar" MaxLength="200" Nullable="false" />
         </EntityType>
         <EntityType Name="Route">
           <Key>
@@ -82,9 +84,9 @@
           <Property Name="RouteName" Type="nvarchar" MaxLength="30" />
           <Property Name="UserId" Type="nvarchar" MaxLength="128" Nullable="false" />
           <Property Name="Origin" Type="nvarchar" MaxLength="150" />
-          <Property Name="OriginCoordinates" Type="nvarchar" MaxLength="40" Nullable="false" />
+          <Property Name="OriginCoordinates" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="Destination" Type="nvarchar" MaxLength="150" />
-          <Property Name="DestinationCoordinates" Type="nvarchar" MaxLength="40" Nullable="false" />
+          <Property Name="DestinationCoordinates" Type="nvarchar" MaxLength="50" Nullable="false" />
           <Property Name="RouteLength" Type="nvarchar" MaxLength="6" Nullable="false" />
         </EntityType>
         <Association Name="FK_dbo_AspNetUser_dbo_Photo_UserId">
@@ -171,6 +173,18 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <Association Name="FK_dbo_Route_RouteId_dbo_Photo_RouteId">
+          <End Role="Route" Type="Self.Route" Multiplicity="0..1" />
+          <End Role="Photo" Type="Self.Photo" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Route">
+              <PropertyRef Name="RouteId" />
+            </Principal>
+            <Dependent Role="Photo">
+              <PropertyRef Name="RouteId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <EntityContainer Name="ModelStoreContainer">
           <EntitySet Name="__MigrationHistory" EntityType="Self.__MigrationHistory" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="AspNetRoles" EntityType="Self.AspNetRoles" Schema="dbo" store:Type="Tables" />
@@ -203,6 +217,10 @@
           <AssociationSet Name="FK_dbo_AspNetUserRoles_dbo_Route_UserId" Association="Self.FK_dbo_AspNetUserRoles_dbo_Route_UserId">
             <End Role="AspNetUsers" EntitySet="AspNetUsers" />
             <End Role="Route" EntitySet="Route" />
+          </AssociationSet>
+          <AssociationSet Name="FK_dbo_Route_RouteId_dbo_Photo_RouteId" Association="Self.FK_dbo_Route_RouteId_dbo_Photo_RouteId">
+            <End Role="Route" EntitySet="Route" />
+            <End Role="Photo" EntitySet="Photo" />
           </AssociationSet>
         </EntityContainer>
       </Schema></edmx:StorageModels>
@@ -276,8 +294,11 @@
           </Key>
           <Property Name="PhotoId" Type="Int32" Nullable="false" />
           <Property Name="UserId" Type="String" MaxLength="128" FixedLength="false" Unicode="true" Nullable="false" />
-          <Property Name="Coordinates" Type="String" MaxLength="30" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Coordinates" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <NavigationProperty Name="AspNetUsers" Relationship="Self.FK_dbo_AspNetUser_dbo_Photo_UserId" FromRole="Photo" ToRole="AspNetUsers" />
+          <Property Name="PhotoUrl" Type="String" Nullable="false" MaxLength="200" FixedLength="false" Unicode="true" />
+          <Property Name="RouteId" Type="Int32" />
+          <NavigationProperty Name="Route" Relationship="Model.FK_dbo_Route_RouteId_dbo_Photo_RouteId" FromRole="Photo" ToRole="Route" />
         </EntityType>
         <EntityType Name="Route">
           <Key>
@@ -287,11 +308,12 @@
           <Property Name="RouteName" Type="String" MaxLength="30" FixedLength="false" Unicode="true" />
           <Property Name="UserId" Type="String" MaxLength="128" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Origin" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
-          <Property Name="OriginCoordinates" Type="String" MaxLength="40" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="OriginCoordinates" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Destination" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
-          <Property Name="DestinationCoordinates" Type="String" MaxLength="40" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="DestinationCoordinates" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="RouteLength" Type="String" MaxLength="6" FixedLength="false" Unicode="true" Nullable="false" />
           <NavigationProperty Name="AspNetUsers" Relationship="Self.FK_dbo_AspNetUserRoles_dbo_Route_UserId" FromRole="Route" ToRole="AspNetUsers" />
+          <NavigationProperty Name="Photo" Relationship="Model.FK_dbo_Route_RouteId_dbo_Photo_RouteId" FromRole="Route" ToRole="Photo" />
         </EntityType>
         <Association Name="FK_dbo_AspNetUserClaims_dbo_AspNetUsers_UserId">
           <End Role="AspNetUsers" Type="Self.AspNetUsers" Multiplicity="1">
@@ -381,7 +403,23 @@
             <End Role="AspNetRoles" EntitySet="AspNetRoles" />
             <End Role="AspNetUsers" EntitySet="AspNetUsers" />
           </AssociationSet>
+          <AssociationSet Name="FK_dbo_Route_RouteId_dbo_Photo_RouteId" Association="Model.FK_dbo_Route_RouteId_dbo_Photo_RouteId">
+            <End Role="Route" EntitySet="Route" />
+            <End Role="Photo" EntitySet="Photo" />
+          </AssociationSet>
         </EntityContainer>
+        <Association Name="FK_dbo_Route_RouteId_dbo_Photo_RouteId">
+          <End Type="Model.Route" Role="Route" Multiplicity="0..1" />
+          <End Type="Model.Photo" Role="Photo" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Route">
+              <PropertyRef Name="RouteId" />
+            </Principal>
+            <Dependent Role="Photo">
+              <PropertyRef Name="RouteId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -446,6 +484,8 @@
           <EntitySetMapping Name="Photo">
             <EntityTypeMapping TypeName="Model.Photo">
               <MappingFragment StoreEntitySet="Photo">
+                <ScalarProperty Name="RouteId" ColumnName="RouteId" />
+                <ScalarProperty Name="PhotoUrl" ColumnName="PhotoUrl" />
                 <ScalarProperty Name="PhotoId" ColumnName="PhotoId" />
                 <ScalarProperty Name="UserId" ColumnName="UserId" />
                 <ScalarProperty Name="Coordinates" ColumnName="Coordinates" />

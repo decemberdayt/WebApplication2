@@ -6,30 +6,28 @@ using System.Web.Mvc;
 
 namespace WebApplication2.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         public ActionResult Index()
         {
-            if(User.Identity.IsAuthenticated)
-            {
-                return View();
-            }
-            else
-            {
-                return RedirectToAction("/Login", "Account");
-            }
-            
-        }
-
-        public ActionResult About()
-        {
-            ViewBag.Message = "Your application description page.";
             return View();
         }
 
+        [AllowAnonymous]
+        public ActionResult About()
+        {
+            return View();
+        }
+
+        [AllowAnonymous]
         public ActionResult Contact()
         {
-            ViewBag.Message = "Your contact page.";
+            return View();
+        }
+
+        public ActionResult Regards()
+        {
             return View();
         }
     }

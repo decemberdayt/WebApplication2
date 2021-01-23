@@ -46,18 +46,13 @@ namespace WebApplication2
             // Konfiguruj logikę weryfikacji nazw użytkowników
             manager.UserValidator = new UserValidator<ApplicationUser>(manager)
             {
-                AllowOnlyAlphanumericUserNames = false,
                 RequireUniqueEmail = true
             };
 
             // Konfiguruj logikę weryfikacji haseł
             manager.PasswordValidator = new PasswordValidator
             {
-                RequiredLength = 6,
-                RequireNonLetterOrDigit = true,
-                RequireDigit = true,
-                RequireLowercase = true,
-                RequireUppercase = true,
+                RequiredLength = 5
             };
 
             // Konfiguruj ustawienia domyślne blokady użytkownika

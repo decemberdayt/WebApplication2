@@ -64,13 +64,15 @@ namespace WebApplication2.Models
 
     public class RegisterViewModel
     {
+        public string Name { get; set; }
+
         [Required]
         [EmailAddress]
         [Display(Name = "Adres e-mail")]
         public string Email { get; set; }
 
         [Required]
-        [StringLength(100, ErrorMessage = "{0} musi zawierać co najmniej następującą liczbę znaków: {2}.", MinimumLength = 6)]
+        [StringLength(100, ErrorMessage = "{0} musi zawierać co najmniej następującą liczbę znaków: {2}.", MinimumLength = 5)]
         [DataType(DataType.Password)]
         [Display(Name = "Hasło")]
         public string Password { get; set; }

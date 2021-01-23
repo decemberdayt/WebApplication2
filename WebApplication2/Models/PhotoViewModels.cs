@@ -10,5 +10,7 @@ namespace WebApplication2.Models
         public int PhotoId { get; set; }
         public string UserId { get; set; }
         public string Coordinates { get; set; }
+        public string PhotoUrl { get; set; }
+        public Nullable<int> RouteId { get; set; }
     }
 }

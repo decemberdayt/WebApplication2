@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
+using Microsoft.AspNet.Identity;
 using System.Linq;
 using System.Net;
 using System.Web;
@@ -10,6 +11,7 @@ using WebApplication2.Models;
 
 namespace WebApplication2.Controllers
 {
+    [Authorize]
     public class PhotosController : Controller
     {
         private Entities db = new Entities();
@@ -17,7 +19,8 @@ namespace WebApplication2.Controllers
         // GET: Photos
         public ActionResult Index()
         {
-            var photo = db.Photo.Include(p => p.AspNetUsers);
+            String user = User.Identity.GetUserId();
+            var photo = db.Photo.Include(p => p.AspNetUsers).Where(r => r.UserId == user);
             return View(photo.ToList());
         }
 
@@ -59,6 +62,32 @@ namespace WebApplication2.Controllers
 
             ViewBag.UserId = new SelectList(db.AspNetUsers, "Id", "Email", photo.UserId);
             return View(photo);
+        }
+
+        public int FindMaxPhotoId()
+        {
+            Photo photo = db.Photo.OrderByDescending(u => u.PhotoId).FirstOrDefault();
+            if (photo==null)
+            {
+                photo = new Photo();
+                photo.PhotoId = 0;
+            }
+            return photo.PhotoId;
+        }
+
+
+        [HttpPost]
+        public ActionResult SavePhoto(String Coordinates, String PhotoUrl, int RouteId)
+        {
+            Photo photo = new Photo();
+            photo.PhotoId = FindMaxPhotoId() + 1;
+            photo.Coordinates = Coordinates;
+            photo.PhotoUrl = PhotoUrl;
+            db.Photo.Add(photo);
+            photo.UserId = User.Identity.GetUserId();
+            photo.RouteId = RouteId;
+            db.SaveChanges();
+            return RedirectToAction("Index","Home");
         }
 
         // GET: Photos/Edit/5
