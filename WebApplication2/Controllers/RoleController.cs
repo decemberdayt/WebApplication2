@@ -1,29 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using System.Web.Mvc;
+﻿using System.Web.Mvc;
 using Microsoft.AspNet.Identity.EntityFramework;
-using WebApplication2.Models;
+using WebApplication2.Services;
 
 namespace WebApplication2.Controllers
 {
     public class RoleController : Controller
     {
-        ApplicationDbContext context;
-
-        public RoleController()
-        {
-            context = new ApplicationDbContext();
-        }
+        RoleService _roleService = new RoleService();
 
         // GET: Role
         public ActionResult Index()
         {
-            var Roles = context.Roles.ToList();
-            return View(Roles);
+            var roles = _roleService.GetAll();
+            return View(roles);
         }
-
 
         public ActionResult Create()
         {
@@ -34,8 +24,7 @@ namespace WebApplication2.Controllers
         [HttpPost]
         public ActionResult Create(IdentityRole Role)
         {
-            context.Roles.Add(Role);
-            context.SaveChanges();
+            _roleService.CreateRole(Role);
             return RedirectToAction("Index");
         }
     }

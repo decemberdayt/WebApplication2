@@ -12,6 +12,9 @@ namespace WebApplication2.Services
         int FindMaxRouteId();
         Route FindById(int? id);
         Route CreateJS(int RouteId, String Origin, String OriginCoordinates, String Destination, String DestinationCoordinates, String RouteLength, String user);
+        void EditRoute(Route route);
+        void DeleteRoute(int id);
+        void Dispose();
     }
 
     public class RouteService : IRouteService
@@ -56,6 +59,27 @@ namespace WebApplication2.Services
             db.SaveChanges();
             return route;
         }
+
+        public void EditRoute(Route route)
+        {
+            db.Entry(route).State = EntityState.Modified;
+            db.SaveChanges();
+        }
+
+        public void DeleteRoute(int id)
+        {
+            PhotoService _photoService = new PhotoService();
+            Route route = FindById(id);
+            _photoService.UpdateRouteIdOnDelete(id);
+            db.Route.Remove(route);
+            db.SaveChanges();
+        }
+
+        public void Dispose()
+        {
+            db.Dispose();
+        }
+
     }
 
 }
