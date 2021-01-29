@@ -146,7 +146,7 @@
             DrawRoutes(map, markers, directionsService, directionsRenderer);
 
             let tmp;
-            distance = computeTotalDistance(directionsRenderer.getDirections());
+            distance = ComputeTotalDistance(directionsRenderer.getDirections());
             console.log(directionsRenderer.getDirections());
             tmp = DistanceBox(map, markers, distance, tmp);
 
@@ -179,7 +179,7 @@
             );
         }
 
-        function computeTotalDistance(result) {
+        function ComputeTotalDistance(result) {
             let total = 0;
             const myroute = result.routes[0];
 

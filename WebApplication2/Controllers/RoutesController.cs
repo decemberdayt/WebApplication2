@@ -15,10 +15,7 @@ namespace WebApplication2.Controllers
     [Authorize]
     public class RoutesController : Controller
     {
-        private Entities db = new Entities();
         private RouteService _routeService = new RouteService();
-        private PhotoService _photoService = new PhotoService();
-
 
         // GET: Routes
         public ActionResult Index()
@@ -42,42 +39,14 @@ namespace WebApplication2.Controllers
             return View(route);
         }
 
-
-        // GET: Routes/Create
-        public ActionResult Create()
-        {
-            ViewBag.UserId = new SelectList(db.AspNetUsers, "Id", "Email");
-            return View();
-        }
-
-        // POST: Routes/Create
-        // Aby zapewnić ochronę przed atakami polegającymi na przesyłaniu dodatkowych danych, włącz określone właściwości, z którymi chcesz utworzyć powiązania.
-        // Aby uzyskać więcej szczegółów, zobacz https://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "UserId,Origin,OriginCoordinates,Destination,DestinationCoordinates")] Route route)
-        {
-            if (ModelState.IsValid)
-            {
-                route.RouteId = _routeService.FindMaxRouteId() + 1;
-                db.Route.Add(route);
-                db.SaveChanges();
-                return RedirectToAction("Index");
-            }
-
-            ViewBag.UserId = new SelectList(db.AspNetUsers, "Id", "Email", route.UserId);
-            return View(route);
-        }
-
         // główna funkcja wywolywana z poziomu JS
         [HttpPost]
         public ActionResult CreateJS(int RouteId, String Origin, String OriginCoordinates, String Destination, String DestinationCoordinates, String RouteLength)
         {
-            String user = User.Identity.GetUserId();
-            var result = _routeService.CreateJS(RouteId, Origin, OriginCoordinates, Destination, DestinationCoordinates, RouteLength, user);
+            var result = _routeService.CreateJS(RouteId, Origin, OriginCoordinates, Destination, DestinationCoordinates, RouteLength, User.Identity.GetUserId());
             return RedirectToAction("Index");
         }
-
+        // GET do dodawania z poziomu JS id drogi do zdjec
         public int FindMaxRouteId()
         {
             return _routeService.FindMaxRouteId();
@@ -90,29 +59,24 @@ namespace WebApplication2.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Route route = db.Route.Find(id);
+            Route route = _routeService.FindById(id);
             if (route == null)
             {
                 return HttpNotFound();
             }
-            ViewBag.UserId = new SelectList(db.AspNetUsers, "Id", "Email", route.UserId);
             return View(route);
         }
 
         // POST: Routes/Edit/5
-        // Aby zapewnić ochronę przed atakami polegającymi na przesyłaniu dodatkowych danych, włącz określone właściwości, z którymi chcesz utworzyć powiązania.
-        // Aby uzyskać więcej szczegółów, zobacz https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Edit([Bind(Include = "RouteId,RouteName,UserId,Origin,OriginCoordinates,Destination,DestinationCoordinates,RouteLength")] Route route)
         {
             if (ModelState.IsValid)
             {
-                db.Entry(route).State = EntityState.Modified;
-                db.SaveChanges();
+                _routeService.EditRoute(route);
                 return RedirectToAction("Index");
             }
-            ViewBag.UserId = new SelectList(db.AspNetUsers, "Id", "Email", route.UserId);
             return View(route);
         }
 
@@ -123,7 +87,7 @@ namespace WebApplication2.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Route route = db.Route.Find(id);
+            Route route = _routeService.FindById(id);
             if (route == null)
             {
                 return HttpNotFound();
@@ -136,10 +100,7 @@ namespace WebApplication2.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(int id)
         {
-            Route route = db.Route.Find(id);
-            _photoService.UpdateRouteIdOnDelete(id);
-            db.Route.Remove(route);
-            db.SaveChanges();
+            _routeService.DeleteRoute(id);
             return RedirectToAction("Index");
         }
 
@@ -147,7 +108,7 @@ namespace WebApplication2.Controllers
         {
             if (disposing)
             {
-                db.Dispose();
+                _routeService.Dispose();
             }
             base.Dispose(disposing);
         }
